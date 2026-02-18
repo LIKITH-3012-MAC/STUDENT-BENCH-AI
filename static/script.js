@@ -7,26 +7,27 @@ const micBtn = document.getElementById("mic-btn");
 const uploadBtn = document.getElementById("upload-btn");
 const fileInput = document.getElementById("file-input");
 
+// ====== BACKEND URL ======
+const BACKEND_URL = "https://student-bench-ai.onrender.com";
+
 // ================= CHAT =================
-
 sendBtn.addEventListener("click", sendMessage);
-
-input.addEventListener("keypress", function (e) {
+input.addEventListener("keypress", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
     }
 });
 
-function sendMessage() {
-    const text = input.value.trim();
+function sendMessage(extraMessage = "") {
+    let text = input.value.trim() + (extraMessage ? "\n\n" + extraMessage : "");
     if (!text) return;
 
     addMessage(text, "user");
     input.value = "";
     statusText.innerText = "Thinking...";
 
-    fetch("/chat", {
+    fetch(`${BACKEND_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text })
@@ -55,6 +56,7 @@ function clearChat() {
 }
 
 // ================= FILE UPLOAD =================
+let pendingFile = null;
 
 uploadBtn.addEventListener("click", () => {
     fileInput.click();
@@ -64,27 +66,46 @@ fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
+    // Keep file pending until user sends query
+    pendingFile = file;
+    addMessage("📎 " + file.name + " ready to send. Enter your query below.", "user");
+});
 
-    fetch("/upload", {
+// Send PDF + query together
+sendBtn.addEventListener("click", () => {
+    if (!pendingFile) return;
+    const query = input.value.trim();
+    if (!query) {
+        alert("Add your query about the PDF first!");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", pendingFile);
+    formData.append("query", query);
+
+    addMessage("📎 " + pendingFile.name + " + your query sent", "user");
+    input.value = "";
+    statusText.innerText = "Processing PDF...";
+
+    fetch(`${BACKEND_URL}/upload`, {
         method: "POST",
         body: formData
     })
     .then(res => res.json())
     .then(data => {
-        addMessage("📎 " + file.name + " uploaded", "user");
         addMessage(data.message, "ai");
+        statusText.innerText = "Ready";
+        pendingFile = null;
     })
     .catch(err => {
-        addMessage("⚠️ Upload failed", "ai");
+        addMessage("⚠️ PDF processing failed", "ai");
+        statusText.innerText = "Error";
     });
 });
 
 // ================= VOICE INPUT =================
-
 if ("webkitSpeechRecognition" in window) {
-
     const recognition = new webkitSpeechRecognition();
     recognition.continuous = false;
     recognition.lang = "en-US";
@@ -94,13 +115,13 @@ if ("webkitSpeechRecognition" in window) {
         statusText.innerText = "Listening...";
     });
 
-    recognition.onresult = function(event) {
+    recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         input.value = transcript;
         statusText.innerText = "Ready";
     };
 
-    recognition.onerror = function() {
+    recognition.onerror = () => {
         statusText.innerText = "Mic Error";
     };
 
@@ -108,16 +129,3 @@ if ("webkitSpeechRecognition" in window) {
     micBtn.disabled = true;
     micBtn.innerText = "❌";
 }
-// Chat request in script.js
-fetch("https://student-bench-ai.onrender.com/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: text })
-})
-
-// File upload
-fetch("https://student-bench-ai.onrender.com/upload", {
-    method: "POST",
-    body: formData
-})
-
