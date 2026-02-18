@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SΛKRΛ VISION AI</title>
+    <link rel="icon" href="static/SAKRAVISION.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="static/style.css">
+</head>
+
+<body>
+
+<div class="background"></div>
+
+<div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+        <div class="logo">
+            <button class="sakra-btn"
+                onclick="window.open('https://likith-3012-mac.github.io/SAKRA-VISION/', '_blank')">
+                <span>SΛKRΛ</span>
+                <small>VISION</small>
+            </button>
+        </div>
+
+        <button class="new-chat" onclick="clearChat()">
+            + New Chat
+        </button>
+
+        <div class="history">
+            <div class="history-title">Recent</div>
+            <div class="history-item">Startup Strategy</div>
+        </div>
+
+        <div class="profile">
+            <img src="static/likithroy.png" 
+                 class="avatar" 
+                 alt="Profile Picture">
+            <div>
+                <p>Student-1</p>
+                <span class="status online">● Online</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- Chat Section -->
+    <main class="chat-section">
+
+        <header class="chat-header">
+            <div class="profile">
+                <img src="static/SAKRAVISION.png" 
+                     class="avatar" 
+                     alt="AI Avatar">
+            </div>
+            <div>
+                <h2>Student Assistant</h2>
+                <span id="status" class="status thinking">Ready</span>
+            </div>
+        </header>
+
+        <div id="chat-window" class="chat-window">
+            <div class="message ai">
+                <div class="bubble">
+                    Welcome to SAKRA-AI 🚀  
+                    Experience next-generation intelligence.
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <textarea id="user-input"
+                placeholder="Ask anything..."
+                rows="1"></textarea>
+
+            <div class="actions">
+                <input type="file" id="file-input" hidden />
+                <button id="upload-btn" title="Upload File">📎</button>
+                <button id="mic-btn" title="Voice Input">🎤</button>
+                <button id="send-btn" title="Send">➤</button>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- JS -->
+<script src="static/script.js"></script>
+</body>
+</html>
