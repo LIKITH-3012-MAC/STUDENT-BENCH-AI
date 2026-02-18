@@ -7,17 +7,15 @@ const micBtn = document.getElementById("mic-btn");
 const uploadBtn = document.getElementById("upload-btn");
 const fileInput = document.getElementById("file-input");
 
-// ====== BACKEND URL ======
 const BACKEND_URL = "https://student-bench-ai.onrender.com";
 
-// ================= FILE STATE =================
 let pendingFile = null;
 
-// ================= SEND HANDLER =================
+// ================= SEND =================
 sendBtn.addEventListener("click", handleSend);
 
 input.addEventListener("keypress", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter") {
         e.preventDefault();
         handleSend();
     }
@@ -27,7 +25,8 @@ function handleSend() {
     const text = input.value.trim();
     if (!text) return;
 
-    // If a file is attached → send PDF + query
+    sendBtn.disabled = true;
+
     if (pendingFile) {
         sendPDFQuery(text);
     } else {
@@ -48,24 +47,25 @@ function sendMessage(text) {
     })
     .then(res => res.json())
     .then(data => {
-        addMessage(data.reply, "ai");
+        addMessage(data.reply || "No response", "ai");
         statusText.innerText = "Ready";
+        sendBtn.disabled = false;
     })
-    .catch(() => {
+    .catch(err => {
+        console.error(err);
         addMessage("⚠️ Server error", "ai");
         statusText.innerText = "Error";
+        sendBtn.disabled = false;
     });
 }
 
-// ================= PDF UPLOAD =================
+// ================= PDF =================
 function sendPDFQuery(query) {
-
     const formData = new FormData();
     formData.append("file", pendingFile);
     formData.append("query", query);
 
-    addMessage("📎 " + pendingFile.name + " + your query sent", "user");
-
+    addMessage("📎 " + pendingFile.name + " + your question", "user");
     input.value = "";
     statusText.innerText = "Processing PDF...";
 
@@ -75,13 +75,16 @@ function sendPDFQuery(query) {
     })
     .then(res => res.json())
     .then(data => {
-        addMessage(data.message, "ai");
+        addMessage(data.message || "No response", "ai");
+        pendingFile = null;
         statusText.innerText = "Ready";
-        pendingFile = null; // Reset after success
+        sendBtn.disabled = false;
     })
-    .catch(() => {
+    .catch(err => {
+        console.error(err);
         addMessage("⚠️ PDF processing failed", "ai");
         statusText.innerText = "Error";
+        sendBtn.disabled = false;
     });
 }
 
@@ -100,12 +103,7 @@ function addMessage(text, type) {
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// ================= CLEAR CHAT =================
-function clearChat() {
-    chatWindow.innerHTML = "";
-}
-
-// ================= FILE SELECT =================
+// ================= FILE =================
 uploadBtn.addEventListener("click", () => {
     fileInput.click();
 });
@@ -115,14 +113,12 @@ fileInput.addEventListener("change", () => {
     if (!file) return;
 
     pendingFile = file;
-
-    addMessage("📎 " + file.name + " ready. Now enter your question.", "user");
+    addMessage("📎 " + file.name + " ready. Ask your question.", "user");
 });
 
-// ================= VOICE INPUT =================
+// ================= VOICE =================
 if ("webkitSpeechRecognition" in window) {
     const recognition = new webkitSpeechRecognition();
-    recognition.continuous = false;
     recognition.lang = "en-US";
 
     micBtn.addEventListener("click", () => {
@@ -131,8 +127,7 @@ if ("webkitSpeechRecognition" in window) {
     });
 
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        input.value = transcript;
+        input.value = event.results[0][0].transcript;
         statusText.innerText = "Ready";
     };
 
@@ -142,5 +137,4 @@ if ("webkitSpeechRecognition" in window) {
 
 } else {
     micBtn.disabled = true;
-    micBtn.innerText = "❌";
 }
