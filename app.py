@@ -8,12 +8,23 @@ from flask_cors import CORS
 # ================= INIT =================
 load_dotenv()
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend (GitHub Pages or other domains)
-app.config["UPLOAD_FOLDER"] = "uploads"
+# Absolute base directory (IMPORTANT for Render)
+base_dir = os.path.abspath(os.path.dirname(__file__))
 
-os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+app = Flask(
+    __name__,
+    template_folder=os.path.join(base_dir, "templates"),
+    static_folder=os.path.join(base_dir, "static")
+)
 
+CORS(app)
+
+# Upload folder
+UPLOAD_FOLDER = os.path.join(base_dir, "uploads")
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Groq client
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # ================= HOME =================
@@ -21,51 +32,58 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 def home():
     return render_template("index.html")
 
-# ================= CHAT (TEXT + OPTIONAL FILE CONTEXT) =================
+
+# ================= CHAT =================
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
         data = request.get_json()
         user_message = data.get("message", "")
-        filename = data.get("filename")  # optional PDF filename
+        filename = data.get("filename")
 
         if not user_message.strip():
             return jsonify({"reply": "⚠️ Empty message"}), 400
 
         messages = []
 
-        # If user has uploaded a PDF earlier, attach PDF text context
+        # Attach PDF context if provided
         if filename:
             filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             if os.path.exists(filepath) and filename.lower().endswith(".pdf"):
                 reader = PdfReader(filepath)
                 pdf_text = ""
+
                 for page in reader.pages:
                     extracted = page.extract_text()
                     if extracted:
                         pdf_text += extracted
+
                 if pdf_text.strip():
-                    # Limit text to avoid token overflow
-                    pdf_text = pdf_text[:4000]
+                    pdf_text = pdf_text[:4000]  # Prevent token overflow
                     messages.append({
                         "role": "system",
                         "content": f"Context from PDF ({filename}):\n{pdf_text}"
                     })
 
-        # Append user query
-        messages.append({"role": "user", "content": user_message})
+        # Add user message
+        messages.append({
+            "role": "user",
+            "content": user_message
+        })
 
-        # Request AI completion
+        # Groq completion
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=messages
         )
 
         reply = response.choices[0].message.content
+
         return jsonify({"reply": reply})
 
     except Exception as e:
         return jsonify({"reply": f"⚠️ Error: {str(e)}"}), 500
+
 
 # ================= FILE UPLOAD =================
 @app.route("/upload", methods=["POST"])
@@ -75,21 +93,25 @@ def upload():
             return jsonify({"message": "⚠️ No file provided"}), 400
 
         file = request.files["file"]
+
         if file.filename == "":
             return jsonify({"message": "⚠️ No file selected"}), 400
+
+        if not file.filename.lower().endswith(".pdf"):
+            return jsonify({"message": "⚠️ Only PDF files supported"}), 400
 
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
         file.save(filepath)
 
-        # Only accept PDFs
-        if not file.filename.lower().endswith(".pdf"):
-            return jsonify({"message": "⚠️ Only PDF files supported"}), 400
-
-        return jsonify({"message": f"📎 {file.filename} uploaded successfully", "filename": file.filename})
+        return jsonify({
+            "message": f"📎 {file.filename} uploaded successfully",
+            "filename": file.filename
+        })
 
     except Exception as e:
         return jsonify({"message": f"⚠️ Upload error: {str(e)}"}), 500
 
+
 # ================= RUN =================
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(host="0.0.0.0", port=5000)
