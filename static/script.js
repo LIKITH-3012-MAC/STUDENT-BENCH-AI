@@ -9,9 +9,11 @@ const fileInput = document.getElementById("file-input");
 // ====== BACKEND URL ======
 const BACKEND_URL = "https://student-bench-ai.onrender.com";
 
+console.log("🔧 DEBUG MODE - Backend URL:", BACKEND_URL);
+
 // ================= STATE =================
 let pendingFile = null;
-let pdfContentStored = null; // Store extracted PDF content from backend
+let pdfContentStored = null;
 
 // ================= CHAT =================
 sendBtn.addEventListener("click", () => {
@@ -90,9 +92,14 @@ fileInput.addEventListener("change", () => {
   }
 
   pendingFile = file;
-  addMessage(`📎 File selected: ${file.name}\n\nNow sending to read...`, "user");
+  console.log("📄 File selected:", {
+    name: file.name,
+    size: file.size,
+    type: file.type
+  });
   
-  // Auto-trigger upload after showing message
+  addMessage(`📎 File selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)\n\nNow sending to read...`, "user");
+  
   setTimeout(uploadAndReadPDF, 500);
 });
 
@@ -107,28 +114,32 @@ function uploadAndReadPDF() {
   formData.append("file", pendingFile);
 
   statusText.innerText = "Reading PDF...";
+  console.log("🚀 Starting PDF upload to:", `${BACKEND_URL}/upload`);
 
   fetch(`${BACKEND_URL}/upload`, {
     method: "POST",
     body: formData
   })
-    .then(res => res.json())
-    .then(data => {
-      // Backend should return: { success: true, content: "extracted text...", fileName: "..." }
-      if (data.success || data.content) {
+    .then(async res => {
+      console.log("📨 Response status:", res.status);
+      const data = await res.json();
+      console.log("📨 Response data:", data);
+      
+      if (res.ok || data.success || data.content) {
         pdfContentStored = data.content || data.message;
         addMessage(`✅ PDF read successfully!\n\n"${pendingFile.name}" is ready.\n\nNow ask me anything about this document:`, "ai");
         input.placeholder = "Ask a question about the PDF...";
         statusText.innerText = "Ready - Ask your question";
         pendingFile = null;
       } else {
-        addMessage("⚠️ Failed to read PDF: " + (data.error || "Unknown error"), "ai");
-        statusText.innerText = "Error";
+        throw new Error(data.error || data.message || "Unknown error from server");
       }
     })
     .catch(err => {
-      addMessage("⚠️ PDF reading failed: " + err.message, "ai");
-      statusText.innerText = "Error";
+      console.error("❌ ERROR:", err);
+      const errorMsg = `⚠️ PDF reading failed!\n\nError: ${err.message}\n\n📋 DEBUGGING INFO:\n1. Check console (F12) for details\n2. Backend URL: ${BACKEND_URL}\n3. File: ${pendingFile?.name}\n\nMake sure your backend has:\n- POST /upload endpoint\n- pdfplumber installed\n- CORS enabled`;
+      addMessage(errorMsg, "ai");
+      statusText.innerText = "Error - Check console";
     });
 }
 
@@ -143,8 +154,8 @@ function sendQueryWithPDF() {
   addMessage(`Question: ${query}`, "user");
   input.value = "";
   statusText.innerText = "Analyzing PDF...";
+  console.log("💬 Sending query:", query);
 
-  // Send query + PDF content together to backend
   fetch(`${BACKEND_URL}/query-pdf`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -153,13 +164,21 @@ function sendQueryWithPDF() {
       pdf_content: pdfContentStored
     })
   })
-    .then(res => res.json())
-    .then(data => {
-      addMessage(data.answer || data.reply || "No answer found", "ai");
-      statusText.innerText = "Ready";
+    .then(async res => {
+      console.log("📨 Query response status:", res.status);
+      const data = await res.json();
+      console.log("📨 Query response data:", data);
+      
+      if (res.ok) {
+        addMessage(data.answer || data.reply || "No answer found", "ai");
+        statusText.innerText = "Ready";
+      } else {
+        throw new Error(data.answer || data.error || "Unknown error");
+      }
     })
     .catch(err => {
-      addMessage("⚠️ Query processing failed: " + err.message, "ai");
+      console.error("❌ QUERY ERROR:", err);
+      addMessage(`⚠️ Query failed: ${err.message}\n\nMake sure your backend has POST /query-pdf endpoint`, "ai");
       statusText.innerText = "Error";
     });
 }
@@ -188,3 +207,7 @@ if ("webkitSpeechRecognition" in window) {
   micBtn.disabled = true;
   micBtn.innerText = "❌";
 }
+
+// ================= INIT =================
+console.log("✅ Chat app loaded - DEBUG mode active");
+console.log("🔧 Open DevTools (F12) to see detailed error logs");
