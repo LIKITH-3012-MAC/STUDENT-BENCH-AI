@@ -108,4 +108,16 @@ if ("webkitSpeechRecognition" in window) {
     micBtn.disabled = true;
     micBtn.innerText = "❌";
 }
+// Chat request in script.js
+fetch("https://student-bench-ai.onrender.com/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: text })
+})
+
+// File upload
+fetch("https://student-bench-ai.onrender.com/upload", {
+    method: "POST",
+    body: formData
+})
 
