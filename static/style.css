@@ -43,48 +43,12 @@ body {
     display: flex;
     flex-direction: column;
     padding: 20px;
-    transition: width 0.3s ease;
 }
 
 .logo {
     font-size: 22px;
     font-weight: 700;
     margin-bottom: 30px;
-    text-align: center;
-}
-
-.sakra-btn {
-    background: transparent;
-    border: 2px solid #00f7ff;
-    color: #00f7ff;
-    padding: 12px 20px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 18px;
-    letter-spacing: 2px;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 10px #00f7ff50;
-}
-
-.sakra-btn span {
-    font-size: 20px;
-}
-
-.sakra-btn small {
-    display: block;
-    font-size: 10px;
-    letter-spacing: 4px;
-    opacity: 0.7;
-}
-
-.sakra-btn:hover {
-    background: #00f7ff;
-    color: #000;
-    box-shadow: 0 0 20px #00f7ff,
-                0 0 40px #00f7ff,
-                0 0 60px #00f7ff;
-    transform: scale(1.05);
 }
 
 .new-chat {
@@ -95,7 +59,6 @@ body {
     color: var(--neon);
     cursor: pointer;
     transition: 0.3s;
-    text-align: center;
 }
 
 .new-chat:hover {
@@ -107,7 +70,6 @@ body {
 .history {
     margin-top: 20px;
     flex: 1;
-    overflow-y: auto;
 }
 
 .history-item {
@@ -143,7 +105,6 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-width: 0; /* prevent overflow */
 }
 
 .chat-header {
@@ -152,6 +113,14 @@ body {
     gap: 15px;
     padding: 20px;
     border-bottom: 1px solid var(--border);
+}
+
+.ai-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: var(--neon);
+    box-shadow: 0 0 20px var(--neon);
 }
 
 .chat-window {
@@ -166,7 +135,6 @@ body {
     border-radius: 15px;
     margin-bottom: 15px;
     animation: fadeIn 0.4s ease;
-    word-wrap: break-word;
 }
 
 .message.ai {
@@ -188,13 +156,10 @@ body {
     display: flex;
     padding: 15px;
     border-top: 1px solid var(--border);
-    flex-wrap: wrap;
-    gap: 10px;
 }
 
 textarea {
     flex: 1;
-    min-height: 40px;
     resize: none;
     padding: 12px;
     border-radius: 12px;
@@ -205,6 +170,7 @@ textarea {
 }
 
 .actions button {
+    margin-left: 10px;
     padding: 10px 14px;
     border-radius: 10px;
     border: none;
@@ -218,95 +184,41 @@ textarea {
     box-shadow: 0 0 10px var(--neon);
 }
 
-/* Scrollbar Styling */
-.chat-window::-webkit-scrollbar,
-.history::-webkit-scrollbar {
-    width: 6px;
+.logo {
+    text-align: center;
+    margin-bottom: 25px;
 }
 
-.chat-window::-webkit-scrollbar-thumb,
-.history::-webkit-scrollbar-thumb {
-    background: var(--neon);
-    border-radius: 3px;
+.sakra-btn {
+    background: transparent;
+    border: 2px solid #00f7ff;
+    color: #00f7ff;
+    padding: 12px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 18px;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px #00f7ff50;
 }
 
-/* Responsive for Mobile */
-@media (max-width: 768px) {
-    .app {
-        flex-direction: column;
-    }
-
-    .sidebar {
-        width: 100%;
-        flex-direction: row;
-        overflow-x: auto;
-        padding: 10px;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .chat-section {
-        flex: 1;
-        min-height: 0;
-    }
-
-    .chat-header {
-        flex-direction: row;
-        gap: 10px;
-        padding: 15px;
-    }
-
-    .chat-window {
-        padding: 10px;
-    }
-
-    .message {
-        max-width: 90%;
-    }
-
-    .input-area {
-        flex-direction: row;
-    }
-
-    textarea {
-        min-height: 35px;
-        font-size: 14px;
-    }
+.sakra-btn span {
+    font-size: 20px;
 }
 
-@media (max-width: 480px) {
-    .sidebar {
-        padding: 8px;
-    }
+.sakra-btn small {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 4px;
+    opacity: 0.7;
+}
 
-    .sakra-btn {
-        font-size: 16px;
-        padding: 8px 14px;
-    }
-
-    .sakra-btn span {
-        font-size: 18px;
-    }
-
-    .sakra-btn small {
-        font-size: 8px;
-    }
-
-    .new-chat {
-        padding: 8px;
-        font-size: 14px;
-    }
-
-    .chat-header h2 {
-        font-size: 16px;
-    }
-
-    .input-area textarea {
-        font-size: 13px;
-    }
-
-    .actions button {
-        padding: 8px 10px;
-        font-size: 14px;
-    }
+.sakra-btn:hover {
+    background: #00f7ff;
+    color: #000;
+    box-shadow: 0 0 20px #00f7ff,
+                0 0 40px #00f7ff,
+                0 0 60px #00f7ff;
+    transform: scale(1.05);
 }
