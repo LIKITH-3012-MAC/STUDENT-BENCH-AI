@@ -1,28 +1,25 @@
 import os
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session
 from groq import Groq
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from flask_cors import CORS
+from flask_session import Session  # pip install Flask-Session
 
 # ================= INIT =================
 load_dotenv()
 
-base_dir = os.path.abspath(os.path.dirname(__file__))
+app = Flask(__name__)
 
-app = Flask(
-    __name__,
-    template_folder=os.path.join(base_dir, "templates"),
-    static_folder=os.path.join(base_dir, "static")
-)
+# --- CRITICAL CONFIG FOR PDF MEMORY ---
+app.secret_key = os.getenv("SECRET_KEY", "prometheus_super_secret_key")
+app.config["SESSION_TYPE"] = "filesystem"  # Stores PDF text on server, not in browser cookie
+app.config["SESSION_PERMANENT"] = False
+Session(app)
 
-CORS(app)
+# Allow credentials so the browser sends the session cookie back
+CORS(app, supports_credentials=True)
 
-UPLOAD_FOLDER = os.path.join(base_dir, "uploads")
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Ensure your .env file has GROQ_API_KEY
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # ================= HOME =================
@@ -30,7 +27,7 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 def home():
     return render_template("index.html")
 
-# ================= CHAT (Normal / Voice) =================
+# ================= CHAT (With Memory) =================
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
@@ -40,7 +37,21 @@ def chat():
         if not user_message.strip():
             return jsonify({"reply": "⚠️ Empty message"}), 400
 
-        messages = [{"role": "user", "content": user_message}]
+        # Retrieve the PDF text from the server-side session
+        pdf_context = session.get("pdf_text", "")
+
+        if pdf_context:
+            # If a PDF was previously uploaded, inject it as context
+            messages = [
+                {
+                    "role": "system", 
+                    "content": f"You are Prometheus AI. Use this PDF content to help: {pdf_context[:12000]}"
+                },
+                {"role": "user", "content": user_message}
+            ]
+        else:
+            # Normal chat if no PDF is in memory
+            messages = [{"role": "user", "content": user_message}]
 
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -51,81 +62,64 @@ def chat():
     except Exception as e:
         return jsonify({"reply": f"⚠️ Error: {str(e)}"}), 500
 
-# ================= FILE UPLOAD + PDF READING =================
+# ================= UPLOAD + EXTRACTION =================
 @app.route("/upload", methods=["POST"])
 def upload():
     try:
-        # 1. Check if file exists in request
         if "file" not in request.files:
             return jsonify({"reply": "⚠️ No file provided"}), 400
 
         file = request.files["file"]
-        # Support for voice or text query alongside the file
-        user_query = request.form.get("query", "Summarize this document and tell me the key points.")
+        user_query = request.form.get("query", "Summarize this document.")
 
         if file.filename == "":
             return jsonify({"reply": "⚠️ No file selected"}), 400
 
-        if not file.filename.lower().endswith(".pdf"):
-            return jsonify({"reply": "⚠️ Only PDF files supported"}), 400
-
-        # 2. Save file temporarily
-        filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
-        file.save(filepath)
-
-        # 3. Extract Text from PDF
-        # This is where the conversion from binary to string happens
-        reader = PdfReader(filepath)
+        # Extract Text
+        reader = PdfReader(file)
         pdf_text = ""
         for page in reader.pages:
             extracted = page.extract_text()
             if extracted:
                 pdf_text += extracted + "\n"
 
-        # 4. Handle Empty PDFs (like scanned images or empty files)
         if not pdf_text.strip():
-            return jsonify({"reply": "⚠️ This PDF seems to be an image or empty. I cannot read the text inside."}), 400
+            return jsonify({"reply": "⚠️ Could not read text from this PDF."}), 400
 
-        # 5. Limit context (Llama 3.1 8B on Groq has a specific window)
-        # 12,000 characters is roughly 3,000 tokens—safe for the 8k limit.
-        context_text = pdf_text[:12000] 
+        # --- SAVE TO SESSION ---
+        session["pdf_text"] = pdf_text 
 
-        # 6. Construct the prompt for Groq
+        # Call Groq for the initial upload response
         messages = [
             {
                 "role": "system", 
-                "content": (
-                    "You are a helpful assistant. Use the provided PDF context to answer the user's question accurately. "
-                    "If the answer is not in the context, tell the user you don't know based on the document."
-                )
+                "content": "You are Prometheus AI. Use the provided PDF context to answer the query."
             },
             {
                 "role": "user", 
-                "content": f"PDF Content:\n{context_text}\n\nUser Question: {user_query}"
+                "content": f"PDF Content:\n{pdf_text[:12000]}\n\nUser Question: {user_query}"
             }
         ]
 
-        # 7. Call Groq
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=messages,
-            temperature=0.3 # Lower temperature = more factual for documents
+            temperature=0.3
         )
 
-        reply = response.choices[0].message.content
-        
-        # Clean up: optional - remove file after reading to save space
-        # os.remove(filepath) 
-
         return jsonify({
-            "reply": reply, 
-            "filename": file.filename,
+            "reply": response.choices[0].message.content,
             "status": "success"
         })
 
     except Exception as e:
         return jsonify({"reply": f"⚠️ Upload error: {str(e)}"}), 500
 
+# Route to clear memory if the user wants to start fresh
+@app.route("/clear", methods=["POST"])
+def clear():
+    session.pop("pdf_text", None)
+    return jsonify({"reply": "Memory cleared!"})
+
 if __name__ == "__main__":
-    # Running on 0.0.0.0 makes it accessible on your local network
     app.run(host="0.0.0.0", port=5000, debug=True)
