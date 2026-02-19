@@ -7,6 +7,7 @@ const micBtn = document.getElementById("mic-btn");
 const uploadBtn = document.getElementById("upload-btn");
 const fileInput = document.getElementById("file-input");
 
+// Replace this with your actual Render URL
 const BACKEND_URL = "https://student-bench-ai.onrender.com";
 
 let pendingFile = null;
@@ -30,7 +31,7 @@ function handleSend() {
     sendBtn.disabled = true;
 
     if (pendingFile) {
-        // If a file is attached, use the upload route (handles voice or text query)
+        // Use upload route when a file is attached
         sendPDFQuery(text || "Summarize this document.");
     } else {
         // Normal chat interaction
@@ -47,6 +48,8 @@ function sendMessage(text) {
     fetch(`${BACKEND_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // CRITICAL: Tells browser to send/receive the session cookie
+        credentials: "include", 
         body: JSON.stringify({ message: text })
     })
     .then(res => res.json())
@@ -57,7 +60,7 @@ function sendMessage(text) {
     })
     .catch(err => {
         console.error(err);
-        addMessage("⚠️ Server error", "ai");
+        addMessage("⚠️ Server error. Check your connection.", "ai");
         statusText.innerText = "Error";
         sendBtn.disabled = false;
     });
@@ -71,16 +74,18 @@ function sendPDFQuery(query) {
 
     addMessage(`📎 [${pendingFile.name}] ${query}`, "user");
     input.value = "";
-    statusText.innerText = "Reading PDF...";
+    statusText.innerText = "Processing PDF...";
 
     fetch(`${BACKEND_URL}/upload`, {
         method: "POST",
-        body: formData // Fetch automatically sets multipart/form-data for FormData
+        // CRITICAL: Connects this file upload to your session memory
+        credentials: "include", 
+        body: formData 
     })
     .then(res => res.json())
     .then(data => {
         addMessage(data.reply || "No response", "ai");
-        clearPendingFile(); // Reset file after successful query
+        clearPendingFile(); 
         statusText.innerText = "Ready";
         sendBtn.disabled = false;
     })
@@ -104,12 +109,13 @@ function addMessage(text, type) {
     msg.appendChild(bubble);
     chatWindow.appendChild(msg);
 
+    // Auto-scroll to bottom
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
 function clearPendingFile() {
     pendingFile = null;
-    fileInput.value = ""; // Clear the input so the same file can be uploaded again
+    fileInput.value = ""; 
 }
 
 // ================= FILE SELECTION =================
@@ -122,12 +128,13 @@ fileInput.addEventListener("change", () => {
     if (!file) return;
 
     if (file.type !== "application/pdf") {
-        addMessage("⚠️ Please select a PDF file.", "ai");
+        addMessage("⚠️ Only PDF files are supported.", "ai");
+        fileInput.value = "";
         return;
     }
 
     pendingFile = file;
-    addMessage(`📎 Ready to analyze: ${file.name}. Ask a question or hit send to summarize.`, "ai");
+    addMessage(`📎 Ready: ${file.name}. What would you like to know?`, "ai");
 });
 
 // ================= VOICE INPUT =================
@@ -142,9 +149,9 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
         try {
             recognition.start();
             statusText.innerText = "Listening...";
-            micBtn.style.color = "red"; // Visual feedback for recording
+            micBtn.style.color = "red"; 
         } catch (e) {
-            console.error("Recognition already started");
+            console.warn("Recognition already active");
         }
     });
 
@@ -153,24 +160,27 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
         input.value = transcript;
         statusText.innerText = "Ready";
         micBtn.style.color = "";
-        
-        // Auto-focus the input so the user can see their voice transcript
         input.focus();
     };
 
-    recognition.onerror = (event) => {
-        console.error("Speech Error:", event.error);
+    recognition.onerror = () => {
         statusText.innerText = "Mic Error";
         micBtn.style.color = "";
     };
 
     recognition.onend = () => {
         micBtn.style.color = "";
-        if(statusText.innerText === "Listening...") statusText.innerText = "Ready";
+        if (statusText.innerText === "Listening...") statusText.innerText = "Ready";
     };
 
 } else {
-    micBtn.title = "Speech recognition not supported in this browser";
-    micBtn.style.opacity = "0.5";
     micBtn.disabled = true;
+    micBtn.title = "Voice not supported in this browser";
+}
+
+// ================= RESET SESSION (Optional) =================
+// You can call this if you want to clear the AI's memory of the PDF
+function clearMemory() {
+    fetch(`${BACKEND_URL}/clear`, { method: "POST", credentials: "include" })
+    .then(() => addMessage("Memory cleared successfully.", "ai"));
 }
