@@ -8,7 +8,6 @@ from flask_cors import CORS
 # ================= INIT =================
 load_dotenv()
 
-# Absolute base directory (IMPORTANT for Render)
 base_dir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(
@@ -19,12 +18,10 @@ app = Flask(
 
 CORS(app)
 
-# Upload folder
 UPLOAD_FOLDER = os.path.join(base_dir, "uploads")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Groq client
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # ================= HOME =================
@@ -32,86 +29,77 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 def home():
     return render_template("index.html")
 
-
-# ================= CHAT =================
+# ================= CHAT (Normal) =================
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
         data = request.get_json()
         user_message = data.get("message", "")
-        filename = data.get("filename")
-
+        
         if not user_message.strip():
             return jsonify({"reply": "⚠️ Empty message"}), 400
 
-        messages = []
+        messages = [{"role": "user", "content": user_message}]
 
-        # Attach PDF context if provided
-        if filename:
-            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-            if os.path.exists(filepath) and filename.lower().endswith(".pdf"):
-                reader = PdfReader(filepath)
-                pdf_text = ""
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=messages
+        )
+        return jsonify({"reply": response.choices[0].message.content})
 
-                for page in reader.pages:
-                    extracted = page.extract_text()
-                    if extracted:
-                        pdf_text += extracted
+    except Exception as e:
+        return jsonify({"reply": f"⚠️ Error: {str(e)}"}), 500
 
-                if pdf_text.strip():
-                    pdf_text = pdf_text[:4000]  # Prevent token overflow
-                    messages.append({
-                        "role": "system",
-                        "content": f"Context from PDF ({filename}):\n{pdf_text}"
-                    })
+# ================= FILE UPLOAD + QUERY =================
+@app.route("/upload", methods=["POST"])
+def upload():
+    try:
+        if "file" not in request.files:
+            return jsonify({"reply": "⚠️ No file provided"}), 400
 
-        # Add user message
-        messages.append({
-            "role": "user",
-            "content": user_message
-        })
+        file = request.files["file"]
+        user_query = request.form.get("query", "Summarize this document.")
 
-        # Groq completion
+        if file.filename == "":
+            return jsonify({"reply": "⚠️ No file selected"}), 400
+
+        if not file.filename.lower().endswith(".pdf"):
+            return jsonify({"reply": "⚠️ Only PDF files supported"}), 400
+
+        # Save file
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+        file.save(filepath)
+
+        # Extract Text
+        reader = PdfReader(filepath)
+        pdf_text = ""
+        for page in reader.pages:
+            extracted = page.extract_text()
+            if extracted:
+                pdf_text += extracted
+
+        if not pdf_text.strip():
+            return jsonify({"reply": "⚠️ Could not read text from this PDF."}), 400
+
+        # Limit context to avoid token limits
+        context_text = pdf_text[:6000] 
+
+        # Call Groq with Context
+        messages = [
+            {"role": "system", "content": f"You are a helpful assistant. Use the following PDF content to answer the user's question.\n\nPDF Content:\n{context_text}"},
+            {"role": "user", "content": user_query}
+        ]
+
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=messages
         )
 
         reply = response.choices[0].message.content
-
-        return jsonify({"reply": reply})
-
-    except Exception as e:
-        return jsonify({"reply": f"⚠️ Error: {str(e)}"}), 500
-
-
-# ================= FILE UPLOAD =================
-@app.route("/upload", methods=["POST"])
-def upload():
-    try:
-        if "file" not in request.files:
-            return jsonify({"message": "⚠️ No file provided"}), 400
-
-        file = request.files["file"]
-
-        if file.filename == "":
-            return jsonify({"message": "⚠️ No file selected"}), 400
-
-        if not file.filename.lower().endswith(".pdf"):
-            return jsonify({"message": "⚠️ Only PDF files supported"}), 400
-
-        filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
-        file.save(filepath)
-
-        return jsonify({
-            "message": f"📎 {file.filename} uploaded successfully",
-            "filename": file.filename
-        })
+        return jsonify({"reply": reply, "filename": file.filename})
 
     except Exception as e:
-        return jsonify({"message": f"⚠️ Upload error: {str(e)}"}), 500
+        return jsonify({"reply": f"⚠️ Upload error: {str(e)}"}), 500
 
-
-# ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
