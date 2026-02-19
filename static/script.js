@@ -23,12 +23,12 @@ input.addEventListener("keypress", (e) => {
 
 function handleSend() {
     const text = input.value.trim();
-    if (!text) return;
+    if (!text && !pendingFile) return;
 
     sendBtn.disabled = true;
 
     if (pendingFile) {
-        sendPDFQuery(text);
+        sendPDFQuery(text || "Summarize this document.");
     } else {
         sendMessage(text);
     }
@@ -65,7 +65,7 @@ function sendPDFQuery(query) {
     formData.append("file", pendingFile);
     formData.append("query", query);
 
-    addMessage("📎 " + pendingFile.name + " + your question", "user");
+    addMessage(`📎 [${pendingFile.name}] ${query}`, "user");
     input.value = "";
     statusText.innerText = "Processing PDF...";
 
@@ -75,8 +75,9 @@ function sendPDFQuery(query) {
     })
     .then(res => res.json())
     .then(data => {
-        addMessage(data.message || "No response", "ai");
-        pendingFile = null;
+        // Now expecting 'reply' from the backend
+        addMessage(data.reply || "No response", "ai");
+        pendingFile = null; // Clear file after use
         statusText.innerText = "Ready";
         sendBtn.disabled = false;
     })
