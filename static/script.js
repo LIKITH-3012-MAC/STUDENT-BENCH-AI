@@ -11,7 +11,7 @@ const BACKEND_URL = "https://student-bench-ai.onrender.com";
 
 let pendingFile = null;
 
-// ================= SEND =================
+// ================= SEND LOGIC =================
 sendBtn.addEventListener("click", handleSend);
 
 input.addEventListener("keypress", (e) => {
@@ -23,13 +23,17 @@ input.addEventListener("keypress", (e) => {
 
 function handleSend() {
     const text = input.value.trim();
+    
+    // If no text and no file, do nothing
     if (!text && !pendingFile) return;
 
     sendBtn.disabled = true;
 
     if (pendingFile) {
+        // If a file is attached, use the upload route (handles voice or text query)
         sendPDFQuery(text || "Summarize this document.");
     } else {
+        // Normal chat interaction
         sendMessage(text);
     }
 }
@@ -59,7 +63,7 @@ function sendMessage(text) {
     });
 }
 
-// ================= PDF =================
+// ================= PDF UPLOAD + QUERY =================
 function sendPDFQuery(query) {
     const formData = new FormData();
     formData.append("file", pendingFile);
@@ -67,17 +71,16 @@ function sendPDFQuery(query) {
 
     addMessage(`📎 [${pendingFile.name}] ${query}`, "user");
     input.value = "";
-    statusText.innerText = "Processing PDF...";
+    statusText.innerText = "Reading PDF...";
 
     fetch(`${BACKEND_URL}/upload`, {
         method: "POST",
-        body: formData
+        body: formData // Fetch automatically sets multipart/form-data for FormData
     })
     .then(res => res.json())
     .then(data => {
-        // Now expecting 'reply' from the backend
         addMessage(data.reply || "No response", "ai");
-        pendingFile = null; // Clear file after use
+        clearPendingFile(); // Reset file after successful query
         statusText.innerText = "Ready";
         sendBtn.disabled = false;
     })
@@ -89,7 +92,7 @@ function sendPDFQuery(query) {
     });
 }
 
-// ================= ADD MESSAGE =================
+// ================= HELPERS =================
 function addMessage(text, type) {
     const msg = document.createElement("div");
     msg.classList.add("message", type);
@@ -104,7 +107,12 @@ function addMessage(text, type) {
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// ================= FILE =================
+function clearPendingFile() {
+    pendingFile = null;
+    fileInput.value = ""; // Clear the input so the same file can be uploaded again
+}
+
+// ================= FILE SELECTION =================
 uploadBtn.addEventListener("click", () => {
     fileInput.click();
 });
@@ -113,29 +121,56 @@ fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
     if (!file) return;
 
+    if (file.type !== "application/pdf") {
+        addMessage("⚠️ Please select a PDF file.", "ai");
+        return;
+    }
+
     pendingFile = file;
-    addMessage("📎 " + file.name + " ready. Ask your question.", "user");
+    addMessage(`📎 Ready to analyze: ${file.name}. Ask a question or hit send to summarize.`, "ai");
 });
 
-// ================= VOICE =================
-if ("webkitSpeechRecognition" in window) {
-    const recognition = new webkitSpeechRecognition();
+// ================= VOICE INPUT =================
+if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
     recognition.lang = "en-US";
+    recognition.interimResults = false;
 
     micBtn.addEventListener("click", () => {
-        recognition.start();
-        statusText.innerText = "Listening...";
+        try {
+            recognition.start();
+            statusText.innerText = "Listening...";
+            micBtn.style.color = "red"; // Visual feedback for recording
+        } catch (e) {
+            console.error("Recognition already started");
+        }
     });
 
     recognition.onresult = (event) => {
-        input.value = event.results[0][0].transcript;
+        const transcript = event.results[0][0].transcript;
+        input.value = transcript;
         statusText.innerText = "Ready";
+        micBtn.style.color = "";
+        
+        // Auto-focus the input so the user can see their voice transcript
+        input.focus();
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
+        console.error("Speech Error:", event.error);
         statusText.innerText = "Mic Error";
+        micBtn.style.color = "";
+    };
+
+    recognition.onend = () => {
+        micBtn.style.color = "";
+        if(statusText.innerText === "Listening...") statusText.innerText = "Ready";
     };
 
 } else {
+    micBtn.title = "Speech recognition not supported in this browser";
+    micBtn.style.opacity = "0.5";
     micBtn.disabled = true;
 }
