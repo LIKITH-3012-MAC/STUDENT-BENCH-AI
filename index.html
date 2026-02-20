@@ -30,7 +30,8 @@
             </button>
         </div>
 
-        <button class="new-chat" onclick="clearChat()">
+        <!-- NEW CHAT BUTTON -->
+        <button class="new-chat" onclick="startNewChat()">
             + New Chat
         </button>
 
@@ -91,8 +92,49 @@
     </main>
 </div>
 
-<!-- JS -->
+<!-- ========================= -->
+<!-- NEW CHAT JS (ONLY THIS)  -->
+<!-- ========================= -->
+
+<script>
+function startNewChat() {
+    const chatWindow = document.getElementById("chat-window");
+    const status = document.getElementById("status");
+    const userInput = document.getElementById("user-input");
+
+    // Smooth fade effect
+    chatWindow.style.opacity = "0";
+
+    setTimeout(() => {
+
+        // Clear all messages
+        chatWindow.innerHTML = `
+            <div class="message ai">
+                <div class="bubble">
+                    Welcome to SAKRA-AI 🚀 <br>
+                    Experience next-generation intelligence.
+                </div>
+            </div>
+        `;
+
+        // Reset status
+        status.textContent = "Ready";
+
+        // Clear input
+        userInput.value = "";
+
+        // Focus input
+        userInput.focus();
+
+        // Show chat again
+        chatWindow.style.opacity = "1";
+
+    }, 200);
+}
+</script>
+
+<!-- Your Existing JS -->
 <script src="static/script.js"></script>
+
 </body>
 </html>
-
