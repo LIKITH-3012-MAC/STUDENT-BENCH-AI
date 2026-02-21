@@ -1,3 +1,5 @@
+
+You said:
 :root {
   --bg1: #0f0c29;
   --bg2: #302b63;
@@ -17,9 +19,7 @@
 }
 
 body {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  height: 100vh;
   overflow: hidden;
   background: linear-gradient(-45deg, var(--bg1), var(--bg2), var(--bg3));
   background-size: 400% 400%;
@@ -33,42 +33,37 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-/* Main App */
 .app {
   display: flex;
-  flex: 1;
-  min-height: 100vh;
-  overflow: hidden;
+  height: 100vh;
 }
 
 /* Sidebar */
 .sidebar {
-  flex: 0 0 260px;
+  width: 260px;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: 25px 20px;
-  background: var(--glass);
-  backdrop-filter: blur(22px);
-  border-right: 1px solid var(--border);
-  transition: all 0.3s ease;
+  padding: 20px;
 }
 
 .logo {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 25px;
 }
 
 .new-chat {
-  padding: 14px;
-  border-radius: 14px;
+  padding: 10px;
+  border-radius: 12px;
   border: 1px solid var(--text-color);
   background: transparent;
   color: var(--text-color);
   cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
+  transition: 0.3s;
 }
 
 .new-chat:hover {
@@ -76,20 +71,17 @@ body {
 }
 
 .history {
-  margin-top: 25px;
+  margin-top: 20px;
   flex: 1;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 .history-item {
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
   cursor: pointer;
-  transition: 0.3s ease;
-  word-break: break-word;
+  transition: 0.3s;
 }
 
 .history-item:hover,
@@ -100,65 +92,55 @@ body {
 .profile {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .avatar {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   background: var(--text-color);
   border-radius: 50%;
 }
 
 /* Chat Section */
 .chat-section {
-  flex: 1 1 auto;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0;
 }
 
-/* Chat Header */
 .chat-header {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 22px;
+  gap: 15px;
+  padding: 20px;
   border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
 }
 
 .ai-avatar {
-  width: 50px;
-  height: 50px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   background: var(--text-color);
 }
 
-/* Chat Window */
 .chat-window {
-  flex: 1 1 auto;
-  padding: 25px 20px;
+  flex: 1;
+  padding: 20px;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
 }
 
 .message {
   max-width: 70%;
-  padding: 14px 18px;
-  border-radius: 18px;
-  margin-bottom: 18px;
-  animation: fadeIn 0.35s ease forwards;
-  word-break: break-word;
-  line-height: 1.5;
+  padding: 12px 16px;
+  border-radius: 15px;
+  margin-bottom: 15px;
+  animation: fadeIn 0.4s ease;
 }
 
 .message.ai {
   background: var(--ai-msg-bg);
-  backdrop-filter: blur(12px);
-  align-self: flex-start;
+  backdrop-filter: blur(10px);
 }
 
 .message.user {
@@ -166,47 +148,42 @@ body {
   align-self: flex-end;
 }
 
-/* Fade In Animation */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 /* Input Area */
 .input-area {
   display: flex;
-  padding: 18px 20px;
+  padding: 15px;
   border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  gap: 12px;
 }
 
 textarea {
-  flex: 1 1 auto;
+  flex: 1;
   resize: none;
-  padding: 14px 16px;
-  border-radius: 14px;
+  padding: 12px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--glass);
   color: var(--text-color);
-  font-size: 16px;
   outline: none;
-  min-height: 50px;
 }
 
 .actions button {
-  padding: 12px 16px;
-  border-radius: 12px;
+  margin-left: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
   border: none;
   cursor: pointer;
   background: var(--glass);
   color: var(--text-color);
-  font-size: 16px;
-  transition: 0.3s ease;
+  transition: 0.3s;
 }
 
 .actions button:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Sakra Button */
@@ -214,83 +191,50 @@ textarea {
   background: transparent;
   border: 2px solid #00f7ff;
   color: #00f7ff;
-  padding: 14px 24px;
-  border-radius: 14px;
+  padding: 12px 20px;
+  border-radius: 12px;
   cursor: pointer;
   font-weight: bold;
-  font-size: 20px;
+  font-size: 18px;
   letter-spacing: 2px;
   transition: all 0.3s ease;
 }
 
 .sakra-btn span {
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .sakra-btn small {
   display: block;
-  font-size: 12px;
+  font-size: 10px;
   letter-spacing: 4px;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .sakra-btn:hover {
   background: #00f7ff;
   color: #000;
-  transform: scale(1.07);
+  transform: scale(1.05);
 }
 
 /* Scrollbar */
 .chat-window::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 .chat-window::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
 }
 
 /* Responsive tweaks */
-@media screen and (max-width: 1024px) {
-  .sidebar {
-    flex: 0 0 220px;
-    padding: 20px 15px;
-  }
-  .chat-header, .chat-window, .input-area {
-    padding: 18px 15px;
-  }
-  .message {
-    max-width: 80%;
-  }
-}
-
 @media screen and (max-width: 768px) {
   .sidebar {
-    flex: 0 0 200px;
-    padding: 15px 12px;
+    width: 200px;
+    padding: 15px;
   }
-  .chat-header, .chat-window, .input-area {
-    padding: 15px 12px;
-  }
-  .message {
-    max-width: 85%;
-    font-size: 15px;
-  }
-}
 
-@media screen and (max-width: 480px) {
-  .sidebar {
-    display: none;
-  }
-  .chat-section {
-    flex: 1 1 100%;
-  }
-  .message {
-    max-width: 95%;
-    font-size: 14px;
-  }
-  textarea {
-    font-size: 14px;
-    min-height: 45px;
+  .chat-header, .chat-window, .input-area {
+    padding: 15px;
   }
 }
