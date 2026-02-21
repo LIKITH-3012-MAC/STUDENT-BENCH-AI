@@ -11,15 +11,22 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# --- CRITICAL CONFIG FOR PDF MEMORY ---
+# --- SECRET KEY ---
 app.secret_key = os.getenv("SECRET_KEY", "prometheus_super_secret_key")
-app.config["SESSION_TYPE"] = "filesystem"  # Stores PDF text on server, not in browser cookie
+
+# --- SESSION CONFIG (Server-side storage) ---
+app.config["SESSION_TYPE"] = "filesystem"   # Stores PDF text on server
 app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_USE_SIGNER"] = True
+app.config["SESSION_FILE_DIR"] = "./.flask_session/"
+app.config["SESSION_FILE_THRESHOLD"] = 100
+
 Session(app)
 
-# Allow credentials so the browser sends the session cookie back
+# Allow credentials so browser sends session cookie
 CORS(app, supports_credentials=True)
 
+# --- GROQ CLIENT ---
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # ================= HOME =================
@@ -27,42 +34,50 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 def home():
     return render_template("index.html")
 
-# ================= CHAT (With Memory) =================
+# ================= HEALTH CHECK (For UptimeRobot) =================
+@app.route("/health")
+def health():
+    return "OK", 200
+
+
+# ================= CHAT (With PDF Memory) =================
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
         data = request.get_json()
         user_message = data.get("message", "")
-        
+
         if not user_message.strip():
             return jsonify({"reply": "⚠️ Empty message"}), 400
 
-        # Retrieve the PDF text from the server-side session
+        # Retrieve PDF text from session
         pdf_context = session.get("pdf_text", "")
 
         if pdf_context:
-            # If a PDF was previously uploaded, inject it as context
             messages = [
                 {
-                    "role": "system", 
-                    "content": f"You are Prometheus AI. Use this PDF content to help: {pdf_context[:12000]}"
+                    "role": "system",
+                    "content": f"You are Prometheus AI. Use this PDF content to help:\n{pdf_context[:12000]}"
                 },
                 {"role": "user", "content": user_message}
             ]
         else:
-            # Normal chat if no PDF is in memory
-            messages = [{"role": "user", "content": user_message}]
+            messages = [
+                {"role": "user", "content": user_message}
+            ]
 
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=messages
         )
+
         return jsonify({"reply": response.choices[0].message.content})
 
     except Exception as e:
         return jsonify({"reply": f"⚠️ Error: {str(e)}"}), 500
 
-# ================= UPLOAD + EXTRACTION =================
+
+# ================= PDF UPLOAD + EXTRACTION =================
 @app.route("/upload", methods=["POST"])
 def upload():
     try:
@@ -75,9 +90,10 @@ def upload():
         if file.filename == "":
             return jsonify({"reply": "⚠️ No file selected"}), 400
 
-        # Extract Text
+        # Extract text from PDF
         reader = PdfReader(file)
         pdf_text = ""
+
         for page in reader.pages:
             extracted = page.extract_text()
             if extracted:
@@ -86,17 +102,16 @@ def upload():
         if not pdf_text.strip():
             return jsonify({"reply": "⚠️ Could not read text from this PDF."}), 400
 
-        # --- SAVE TO SESSION ---
-        session["pdf_text"] = pdf_text 
+        # Save PDF content to session
+        session["pdf_text"] = pdf_text
 
-        # Call Groq for the initial upload response
         messages = [
             {
-                "role": "system", 
+                "role": "system",
                 "content": "You are Prometheus AI. Use the provided PDF context to answer the query."
             },
             {
-                "role": "user", 
+                "role": "user",
                 "content": f"PDF Content:\n{pdf_text[:12000]}\n\nUser Question: {user_query}"
             }
         ]
@@ -115,11 +130,15 @@ def upload():
     except Exception as e:
         return jsonify({"reply": f"⚠️ Upload error: {str(e)}"}), 500
 
-# Route to clear memory if the user wants to start fresh
+
+# ================= CLEAR MEMORY =================
 @app.route("/clear", methods=["POST"])
 def clear():
     session.pop("pdf_text", None)
     return jsonify({"reply": "Memory cleared!"})
 
+
+# ================= RUN (For Local Only) =================
+# ⚠️ DO NOT USE THIS IN RENDER START COMMAND
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
