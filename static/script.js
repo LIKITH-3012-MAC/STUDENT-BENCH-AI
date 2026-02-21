@@ -11,7 +11,7 @@ const MAX_FILE_SIZE_MB = 25;
 // ================= ELEMENTS =================
 const sendBtn = document.getElementById("send-btn");
 const input = document.getElementById("user-input");
-const chatWindow = document.getElementById("chat-window");
+const chatWindow = document.querySelector(".chat-window");
 const statusText = document.getElementById("status");
 
 const micBtn = document.getElementById("mic-btn");
@@ -21,6 +21,23 @@ const clearBtn = document.getElementById("clear-btn"); // optional
 
 let pendingFile = null;
 let isProcessing = false;
+
+// ================= SCROLL MANAGEMENT =================
+let userScrolling = false;
+
+function scrollToBottom(force = false) {
+  const threshold = 100; // px from bottom
+  const distanceFromBottom = chatWindow.scrollHeight - chatWindow.scrollTop - chatWindow.clientHeight;
+
+  if (!userScrolling || force || distanceFromBottom < threshold) {
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+}
+
+chatWindow.addEventListener("scroll", () => {
+  const distanceFromBottom = chatWindow.scrollHeight - chatWindow.scrollTop - chatWindow.clientHeight;
+  userScrolling = distanceFromBottom > 100; // user is scrolling up
+});
 
 // ================= SEND EVENTS =================
 sendBtn.addEventListener("click", handleSend);
@@ -120,13 +137,12 @@ async function addMessageWithTyping(text, type) {
   bubble.classList.add("bubble");
   msg.appendChild(bubble);
   chatWindow.appendChild(msg);
-  smoothScroll();
 
-  bubble.innerText = "";
+  // Auto-scroll as AI types, respecting user scroll
   for (let i = 0; i < text.length; i++) {
     bubble.innerText += text[i];
-    await new Promise((r) => setTimeout(r, 15)); // typing speed
-    smoothScroll();
+    await new Promise((r) => setTimeout(r, 15));
+    scrollToBottom();
   }
 }
 
@@ -141,7 +157,7 @@ function addMessage(text, type) {
 
   msg.appendChild(bubble);
   chatWindow.appendChild(msg);
-  smoothScroll();
+  scrollToBottom();
 }
 
 function addLoader() {
@@ -154,20 +170,13 @@ function addLoader() {
 
   loader.appendChild(bubble);
   chatWindow.appendChild(loader);
-  smoothScroll();
+  scrollToBottom();
 
   return loader;
 }
 
 function removeLoader(loader) {
   if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
-}
-
-function smoothScroll() {
-  chatWindow.scrollTo({
-    top: chatWindow.scrollHeight,
-    behavior: "smooth"
-  });
 }
 
 function setStatus(text) {
@@ -186,22 +195,18 @@ function clearPendingFile() {
 }
 
 // ================= FILE SELECTION =================
-uploadBtn.addEventListener("click", () => {
-  fileInput.click();
-});
+uploadBtn.addEventListener("click", () => fileInput.click());
 
 fileInput.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
 
-  // Size validation
   if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
     addMessage(`⚠️ File exceeds ${MAX_FILE_SIZE_MB}MB limit.`, "ai");
     fileInput.value = "";
     return;
   }
 
-  // Allowed extensions
   const allowedExtensions = ["pdf", "csv", "docx", "xlsx"];
   const extension = file.name.split(".").pop().toLowerCase();
 
@@ -264,4 +269,23 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
 } else {
   micBtn.disabled = true;
   micBtn.title = "Voice not supported in this browser";
+}
+
+// ================= AI AUTO-SCROLL HELPER (EXTRA) =================
+function addAIMessage(content) {
+  const msg = document.createElement("div");
+  msg.classList.add("message", "ai");
+  msg.textContent = content;
+  chatWindow.appendChild(msg);
+  scrollToBottom();
+}
+
+// Example AI typing simulation (can remove in prod)
+function simulateAIResponse(messages) {
+  let index = 0;
+  const interval = setInterval(() => {
+    if (index >= messages.length) return clearInterval(interval);
+    addAIMessage(messages[index]);
+    index++;
+  }, 800);
 }
