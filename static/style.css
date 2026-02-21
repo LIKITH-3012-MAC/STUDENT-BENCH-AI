@@ -16,13 +16,17 @@
   font-family: 'Inter', sans-serif;
 }
 
-body {
-  height: 100vh;
+html, body {
+  width: 100%;
+  height: 100%;
   overflow: hidden;
+  color: var(--text-color);
+}
+
+body {
   background: linear-gradient(-45deg, var(--bg1), var(--bg2), var(--bg3));
   background-size: 400% 400%;
   animation: gradientMove 12s ease infinite;
-  color: var(--text-color);
 }
 
 @keyframes gradientMove {
@@ -31,13 +35,17 @@ body {
   100% { background-position: 0% 50%; }
 }
 
+/* MAIN APP */
 .app {
   display: flex;
-  height: 100vh;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
 }
 
-/* Sidebar */
+/* SIDEBAR */
 .sidebar {
+  flex-shrink: 0;
   width: 260px;
   background: var(--glass);
   backdrop-filter: blur(20px);
@@ -45,6 +53,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 20px;
+  overflow-y: auto;
 }
 
 .logo {
@@ -100,11 +109,12 @@ body {
   border-radius: 50%;
 }
 
-/* Chat Section */
+/* CHAT SECTION */
 .chat-section {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* important for flex shrinking */
 }
 
 .chat-header {
@@ -126,6 +136,7 @@ body {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  min-height: 0; /* important for mobile flex scrolling */
 }
 
 .message {
@@ -134,6 +145,10 @@ body {
   border-radius: 15px;
   margin-bottom: 15px;
   animation: fadeIn 0.4s ease;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
+  line-height: 1.5;
 }
 
 .message.ai {
@@ -151,7 +166,7 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Input Area */
+/* INPUT AREA */
 .input-area {
   display: flex;
   padding: 15px;
@@ -184,7 +199,7 @@ textarea {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* Sakra Button */
+/* SAKRA BUTTON */
 .sakra-btn {
   background: transparent;
   border: 2px solid #00f7ff;
@@ -215,7 +230,7 @@ textarea {
   transform: scale(1.05);
 }
 
-/* Scrollbar */
+/* SCROLLBAR */
 .chat-window::-webkit-scrollbar {
   width: 8px;
 }
@@ -225,31 +240,46 @@ textarea {
   border-radius: 10px;
 }
 
-/* Responsive tweaks */
-@media screen and (max-width: 768px) {
+/* ================= RESPONSIVE ================= */
+@media screen and (max-width: 1024px) {
   .sidebar {
-    width: 200px;
-    padding: 15px;
+    width: 220px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 10px;
   }
 
   .chat-header, .chat-window, .input-area {
-    padding: 15px;
+    padding: 10px;
+  }
+
+  .message {
+    max-width: 85%;
   }
 }
 
-/* =================== NEW FIXES =================== */
-
-/* Ensure word wrapping and spacing for small screens */
-.message {
-  word-wrap: break-word;
-  word-break: break-word;
-  white-space: pre-wrap;
-  line-height: 1.5;
-}
-
-/* Adjust max-width for very small screens */
 @media screen and (max-width: 480px) {
   .message {
-    max-width: 90%;
+    max-width: 95%;
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  textarea {
+    font-size: 14px;
+  }
+
+  .actions button {
+    padding: 8px 10px;
   }
 }
