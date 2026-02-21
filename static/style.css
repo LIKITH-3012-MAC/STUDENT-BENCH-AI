@@ -1,3 +1,4 @@
+/* ================= CSS ================= */
 :root {
   --bg1: #0f0c29;
   --bg2: #302b63;
@@ -17,19 +18,19 @@
 }
 
 html, body {
-  height: 100%;
   width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
 body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: linear-gradient(-45deg, var(--bg1), var(--bg2), var(--bg3));
   background-size: 400% 400%;
   animation: gradientMove 12s ease infinite;
   color: var(--text-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 @keyframes gradientMove {
@@ -47,6 +48,7 @@ body {
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 0 40px rgba(0,0,0,0.3);
+  flex-direction: row;
 }
 
 /* Sidebar */
@@ -59,85 +61,28 @@ body {
   flex-direction: column;
   padding: 20px;
   min-width: 180px;
-}
-
-.logo {
-  font-size: 22px;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 25px;
-}
-
-.new-chat {
-  padding: 10px;
-  border-radius: 12px;
-  border: 1px solid var(--text-color);
-  background: transparent;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.new-chat:hover {
-  background: var(--glass);
-}
-
-.history {
-  margin-top: 20px;
-  flex: 1;
   overflow-y: auto;
-  scroll-behavior: smooth;
 }
 
-.history-item {
-  padding: 10px;
-  border-radius: 10px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: 0.3s;
+.logo { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 25px; }
+.new-chat {
+  padding: 10px; border-radius: 12px; border: 1px solid var(--text-color);
+  background: transparent; color: var(--text-color); cursor: pointer; transition: 0.3s;
 }
+.new-chat:hover { background: var(--glass); }
 
-.history-item:hover,
-.history-item.active {
-  background: var(--glass);
-}
+.history { flex: 1; overflow-y: auto; scroll-behavior: smooth; margin-top: 20px; }
+.history-item { padding: 10px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: 0.3s; }
+.history-item:hover, .history-item.active { background: var(--glass); }
 
-.profile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  background: var(--text-color);
-  border-radius: 50%;
-}
+.profile { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
+.avatar { width: 40px; height: 40px; background: var(--text-color); border-radius: 50%; }
 
 /* Chat Section */
-.chat-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0; /* Important for flexbox children in small screens */
-}
+.chat-section { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-.chat-header {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 20px;
-  border-bottom: 1px solid var(--border);
-}
-
-.ai-avatar {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background: var(--text-color);
-}
+.chat-header { display: flex; align-items: center; gap: 15px; padding: 20px; border-bottom: 1px solid var(--border); }
+.ai-avatar { width: 45px; height: 45px; border-radius: 50%; background: var(--text-color); }
 
 .chat-window {
   flex: 1;
@@ -158,97 +103,23 @@ body {
   line-height: 1.5;
 }
 
-.message.ai {
-  background: var(--ai-msg-bg);
-  backdrop-filter: blur(10px);
-  align-self: flex-start;
-}
+.message.ai { background: var(--ai-msg-bg); backdrop-filter: blur(10px); align-self: flex-start; }
+.message.user { background: var(--user-msg-bg); align-self: flex-end; }
 
-.message.user {
-  background: var(--user-msg-bg);
-  align-self: flex-end;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
 
 /* Input Area */
-.input-area {
-  display: flex;
-  padding: 15px;
-  border-top: 1px solid var(--border);
-  gap: 10px;
-}
-
+.input-area { display: flex; padding: 15px; border-top: 1px solid var(--border); gap: 10px; }
 textarea {
-  flex: 1;
-  resize: none;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--glass);
-  color: var(--text-color);
-  outline: none;
-  min-height: 45px;
-  max-height: 150px;
-  overflow-y: auto;
+  flex: 1; resize: none; padding: 12px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--glass); color: var(--text-color); outline: none;
+  min-height: 45px; max-height: 150px; overflow-y: auto;
 }
-
 .actions button {
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  background: var(--glass);
-  color: var(--text-color);
-  transition: 0.3s;
+  padding: 10px 14px; border-radius: 10px; border: none; cursor: pointer;
+  background: var(--glass); color: var(--text-color); transition: 0.3s;
 }
-
-.actions button:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Sakra Button */
-.sakra-btn {
-  background: transparent;
-  border: 2px solid #00f7ff;
-  color: #00f7ff;
-  padding: 12px 20px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 18px;
-  letter-spacing: 2px;
-  transition: all 0.3s ease;
-}
-
-.sakra-btn span { font-size: 20px; }
-.sakra-btn small {
-  display: block;
-  font-size: 10px;
-  letter-spacing: 4px;
-  opacity: 0.7;
-}
-
-.sakra-btn:hover {
-  background: #00f7ff;
-  color: #000;
-  transform: scale(1.05);
-}
-
-/* Scrollbar */
-.chat-window::-webkit-scrollbar,
-.history::-webkit-scrollbar {
-  width: 8px;
-}
-
-.chat-window::-webkit-scrollbar-thumb,
-.history::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-}
+.actions button:hover { background: rgba(255,255,255,0.1); }
 
 /* Responsive tweaks */
 @media screen and (max-width: 1024px) {
@@ -267,3 +138,6 @@ textarea {
   .message { max-width: 95%; font-size: 14px; }
   textarea { font-size: 14px; }
 }
+
+.chat-window::-webkit-scrollbar, .history::-webkit-scrollbar { width: 8px; }
+.chat-window::-webkit-scrollbar-thumb, .history::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
