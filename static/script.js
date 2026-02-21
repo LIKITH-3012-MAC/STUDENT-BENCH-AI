@@ -1,3 +1,14 @@
+// ================= CONFIG =================
+
+// Auto detect environment (Local vs Production)
+const BACKEND_URL =
+    window.location.hostname === "localhost"
+        ? "http://127.0.0.1:5000"
+        : "https://student-bench-ai.onrender.com";
+
+const MAX_FILE_SIZE_MB = 25;
+
+// ================= ELEMENTS =================
 const sendBtn = document.getElementById("send-btn");
 const input = document.getElementById("user-input");
 const chatWindow = document.getElementById("chat-window");
@@ -6,95 +17,98 @@ const statusText = document.getElementById("status");
 const micBtn = document.getElementById("mic-btn");
 const uploadBtn = document.getElementById("upload-btn");
 const fileInput = document.getElementById("file-input");
-
-// Replace this with your actual Render URL
-const BACKEND_URL = "https://student-bench-ai.onrender.com";
+const clearBtn = document.getElementById("clear-btn"); // optional
 
 let pendingFile = null;
+let isProcessing = false;
 
-// ================= SEND LOGIC =================
+// ================= SEND EVENTS =================
 sendBtn.addEventListener("click", handleSend);
 
-input.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
+input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSend();
     }
 });
 
+// ================= MAIN SEND HANDLER =================
 function handleSend() {
+    if (isProcessing) return;
+
     const text = input.value.trim();
-    
-    // If no text and no file, do nothing
     if (!text && !pendingFile) return;
 
+    isProcessing = true;
     sendBtn.disabled = true;
 
     if (pendingFile) {
-        // Use upload route when a file is attached
-        sendPDFQuery(text || "Summarize this document.");
+        sendFileQuery(text || "Summarize this document.");
     } else {
-        // Normal chat interaction
         sendMessage(text);
     }
 }
 
 // ================= NORMAL CHAT =================
-function sendMessage(text) {
+async function sendMessage(text) {
     addMessage(text, "user");
     input.value = "";
-    statusText.innerText = "Thinking...";
 
-    fetch(`${BACKEND_URL}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // CRITICAL: Tells browser to send/receive the session cookie
-        credentials: "include", 
-        body: JSON.stringify({ message: text })
-    })
-    .then(res => res.json())
-    .then(data => {
+    const loader = addLoader();
+    setStatus("Thinking...");
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ message: text })
+        });
+
+        const data = await response.json();
+        removeLoader(loader);
+
         addMessage(data.reply || "No response", "ai");
-        statusText.innerText = "Ready";
-        sendBtn.disabled = false;
-    })
-    .catch(err => {
+    } catch (err) {
+        removeLoader(loader);
+        addMessage("⚠️ Server connection failed.", "ai");
         console.error(err);
-        addMessage("⚠️ Server error. Check your connection.", "ai");
-        statusText.innerText = "Error";
-        sendBtn.disabled = false;
-    });
+    }
+
+    finishProcessing();
 }
 
-// ================= PDF UPLOAD + QUERY =================
-function sendPDFQuery(query) {
+// ================= FILE UPLOAD =================
+async function sendFileQuery(query) {
     const formData = new FormData();
     formData.append("file", pendingFile);
     formData.append("query", query);
 
-    addMessage(`📎 [${pendingFile.name}] ${query}`, "user");
+    addMessage(`📎 ${pendingFile.name}\n${query}`, "user");
     input.value = "";
-    statusText.innerText = "Processing PDF...";
 
-    fetch(`${BACKEND_URL}/upload`, {
-        method: "POST",
-        // CRITICAL: Connects this file upload to your session memory
-        credentials: "include", 
-        body: formData 
-    })
-    .then(res => res.json())
-    .then(data => {
+    const loader = addLoader();
+    setStatus("Processing file...");
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/upload`, {
+            method: "POST",
+            credentials: "include",
+            body: formData
+        });
+
+        const data = await response.json();
+        removeLoader(loader);
+
         addMessage(data.reply || "No response", "ai");
-        clearPendingFile(); 
-        statusText.innerText = "Ready";
-        sendBtn.disabled = false;
-    })
-    .catch(err => {
+        clearPendingFile();
+    } catch (err) {
+        removeLoader(loader);
+        addMessage("⚠️ File processing failed.", "ai");
         console.error(err);
-        addMessage("⚠️ PDF processing failed", "ai");
-        statusText.innerText = "Error";
-        sendBtn.disabled = false;
-    });
+    }
+
+    finishProcessing();
 }
 
 // ================= HELPERS =================
@@ -104,18 +118,55 @@ function addMessage(text, type) {
 
     const bubble = document.createElement("div");
     bubble.classList.add("bubble");
-    bubble.innerText = text;
 
+    bubble.innerText = text;
     msg.appendChild(bubble);
     chatWindow.appendChild(msg);
 
-    // Auto-scroll to bottom
-    chatWindow.scrollTop = chatWindow.scrollHeight;
+    smoothScroll();
+}
+
+function addLoader() {
+    const loader = document.createElement("div");
+    loader.classList.add("message", "ai");
+
+    const bubble = document.createElement("div");
+    bubble.classList.add("bubble", "loading");
+    bubble.innerText = "⏳ ...";
+
+    loader.appendChild(bubble);
+    chatWindow.appendChild(loader);
+    smoothScroll();
+
+    return loader;
+}
+
+function removeLoader(loader) {
+    if (loader && loader.parentNode) {
+        loader.parentNode.removeChild(loader);
+    }
+}
+
+function smoothScroll() {
+    chatWindow.scrollTo({
+        top: chatWindow.scrollHeight,
+        behavior: "smooth"
+    });
+}
+
+function setStatus(text) {
+    statusText.innerText = text;
+}
+
+function finishProcessing() {
+    isProcessing = false;
+    sendBtn.disabled = false;
+    setStatus("Ready");
 }
 
 function clearPendingFile() {
     pendingFile = null;
-    fileInput.value = ""; 
+    fileInput.value = "";
 }
 
 // ================= FILE SELECTION =================
@@ -127,6 +178,14 @@ fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
     if (!file) return;
 
+    // Size validation
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        addMessage(`⚠️ File exceeds ${MAX_FILE_SIZE_MB}MB limit.`, "ai");
+        fileInput.value = "";
+        return;
+    }
+
+    // Optional: Restrict to PDF
     if (file.type !== "application/pdf") {
         addMessage("⚠️ Only PDF files are supported.", "ai");
         fileInput.value = "";
@@ -137,50 +196,55 @@ fileInput.addEventListener("change", () => {
     addMessage(`📎 Ready: ${file.name}. What would you like to know?`, "ai");
 });
 
+// ================= CLEAR MEMORY =================
+if (clearBtn) {
+    clearBtn.addEventListener("click", async () => {
+        await fetch(`${BACKEND_URL}/clear`, {
+            method: "POST",
+            credentials: "include"
+        });
+
+        addMessage("🧠 Memory cleared.", "ai");
+    });
+}
+
 // ================= VOICE INPUT =================
 if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
     const recognition = new SpeechRecognition();
-    
     recognition.lang = "en-US";
     recognition.interimResults = false;
 
     micBtn.addEventListener("click", () => {
         try {
             recognition.start();
-            statusText.innerText = "Listening...";
-            micBtn.style.color = "red"; 
+            micBtn.style.color = "red";
+            setStatus("Listening...");
         } catch (e) {
-            console.warn("Recognition already active");
+            console.warn("Mic already active");
         }
     });
 
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        input.value = transcript;
-        statusText.innerText = "Ready";
+        input.value = event.results[0][0].transcript;
         micBtn.style.color = "";
+        setStatus("Ready");
         input.focus();
     };
 
     recognition.onerror = () => {
-        statusText.innerText = "Mic Error";
         micBtn.style.color = "";
+        setStatus("Mic error");
     };
 
     recognition.onend = () => {
         micBtn.style.color = "";
-        if (statusText.innerText === "Listening...") statusText.innerText = "Ready";
+        if (statusText.innerText === "Listening...")
+            setStatus("Ready");
     };
-
 } else {
     micBtn.disabled = true;
     micBtn.title = "Voice not supported in this browser";
-}
-
-// ================= RESET SESSION (Optional) =================
-// You can call this if you want to clear the AI's memory of the PDF
-function clearMemory() {
-    fetch(`${BACKEND_URL}/clear`, { method: "POST", credentials: "include" })
-    .then(() => addMessage("Memory cleared successfully.", "ai"));
 }
