@@ -17,16 +17,19 @@
 }
 
 html, body {
-  width: 100%;
   height: 100%;
+  width: 100%;
   overflow: hidden;
-  color: var(--text-color);
 }
 
 body {
   background: linear-gradient(-45deg, var(--bg1), var(--bg2), var(--bg3));
   background-size: 400% 400%;
   animation: gradientMove 12s ease infinite;
+  color: var(--text-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 @keyframes gradientMove {
@@ -35,17 +38,19 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-/* MAIN APP */
 .app {
   display: flex;
-  flex-direction: row;
-  width: 100%;
-  height: 100%;
+  width: 95%;
+  max-width: 1400px;
+  height: 95vh;
+  background: var(--glass);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0,0,0,0.3);
 }
 
-/* SIDEBAR */
+/* Sidebar */
 .sidebar {
-  flex-shrink: 0;
   width: 260px;
   background: var(--glass);
   backdrop-filter: blur(20px);
@@ -53,7 +58,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  overflow-y: auto;
+  min-width: 180px;
 }
 
 .logo {
@@ -81,6 +86,7 @@ body {
   margin-top: 20px;
   flex: 1;
   overflow-y: auto;
+  scroll-behavior: smooth;
 }
 
 .history-item {
@@ -100,6 +106,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-top: 20px;
 }
 
 .avatar {
@@ -109,12 +116,12 @@ body {
   border-radius: 50%;
 }
 
-/* CHAT SECTION */
+/* Chat Section */
 .chat-section {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0; /* important for flex shrinking */
+  min-width: 0; /* Important for flexbox children in small screens */
 }
 
 .chat-header {
@@ -136,7 +143,7 @@ body {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  min-height: 0; /* important for mobile flex scrolling */
+  scroll-behavior: smooth;
 }
 
 .message {
@@ -154,6 +161,7 @@ body {
 .message.ai {
   background: var(--ai-msg-bg);
   backdrop-filter: blur(10px);
+  align-self: flex-start;
 }
 
 .message.user {
@@ -166,11 +174,12 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* INPUT AREA */
+/* Input Area */
 .input-area {
   display: flex;
   padding: 15px;
   border-top: 1px solid var(--border);
+  gap: 10px;
 }
 
 textarea {
@@ -182,10 +191,12 @@ textarea {
   background: var(--glass);
   color: var(--text-color);
   outline: none;
+  min-height: 45px;
+  max-height: 150px;
+  overflow-y: auto;
 }
 
 .actions button {
-  margin-left: 10px;
   padding: 10px 14px;
   border-radius: 10px;
   border: none;
@@ -199,7 +210,7 @@ textarea {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* SAKRA BUTTON */
+/* Sakra Button */
 .sakra-btn {
   background: transparent;
   border: 2px solid #00f7ff;
@@ -213,10 +224,7 @@ textarea {
   transition: all 0.3s ease;
 }
 
-.sakra-btn span {
-  font-size: 20px;
-}
-
+.sakra-btn span { font-size: 20px; }
 .sakra-btn small {
   display: block;
   font-size: 10px;
@@ -230,56 +238,32 @@ textarea {
   transform: scale(1.05);
 }
 
-/* SCROLLBAR */
-.chat-window::-webkit-scrollbar {
+/* Scrollbar */
+.chat-window::-webkit-scrollbar,
+.history::-webkit-scrollbar {
   width: 8px;
 }
 
-.chat-window::-webkit-scrollbar-thumb {
+.chat-window::-webkit-scrollbar-thumb,
+.history::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 10px;
 }
 
-/* ================= RESPONSIVE ================= */
+/* Responsive tweaks */
 @media screen and (max-width: 1024px) {
-  .sidebar {
-    width: 220px;
-  }
+  .app { flex-direction: column; height: 95vh; }
+  .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; }
+  .chat-section { width: 100%; flex: 1; }
 }
 
 @media screen and (max-width: 768px) {
-  .app {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    flex-direction: row;
-    overflow-x: auto;
-    padding: 10px;
-  }
-
-  .chat-header, .chat-window, .input-area {
-    padding: 10px;
-  }
-
-  .message {
-    max-width: 85%;
-  }
+  .sidebar { width: 200px; padding: 10px; }
+  .chat-header, .chat-window, .input-area { padding: 12px; }
+  .message { max-width: 85%; }
 }
 
 @media screen and (max-width: 480px) {
-  .message {
-    max-width: 95%;
-    font-size: 14px;
-    padding: 10px 12px;
-  }
-
-  textarea {
-    font-size: 14px;
-  }
-
-  .actions button {
-    padding: 8px 10px;
-  }
+  .message { max-width: 95%; font-size: 14px; }
+  textarea { font-size: 14px; }
 }
