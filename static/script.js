@@ -1,12 +1,13 @@
 // ================= CONFIG =================
 
-// Auto detect environment (Local vs Production)
+// Detect environment (Local vs Production)
 const BACKEND_URL =
     window.location.hostname === "localhost"
         ? "http://127.0.0.1:5000"
         : "https://student-bench-ai.onrender.com";
 
 const MAX_FILE_SIZE_MB = 25;
+const ALLOWED_EXTENSIONS = ["pdf", "csv", "docx", "xlsx"];
 
 // ================= ELEMENTS =================
 const sendBtn = document.getElementById("send-btn");
@@ -22,7 +23,7 @@ const clearBtn = document.getElementById("clear-btn"); // optional
 let pendingFile = null;
 let isProcessing = false;
 
-// ================= SEND EVENTS =================
+// ================= EVENTS =================
 sendBtn.addEventListener("click", handleSend);
 
 input.addEventListener("keydown", (e) => {
@@ -32,7 +33,18 @@ input.addEventListener("keydown", (e) => {
     }
 });
 
-// ================= MAIN SEND HANDLER =================
+uploadBtn.addEventListener("click", () => fileInput.click());
+
+fileInput.addEventListener("change", handleFileSelection);
+
+if (clearBtn) {
+    clearBtn.addEventListener("click", async () => {
+        await fetch(`${BACKEND_URL}/clear`, { method: "POST", credentials: "include" });
+        addMessage("🧠 Memory cleared.", "ai");
+    });
+}
+
+// ================= SEND HANDLER =================
 function handleSend() {
     if (isProcessing) return;
 
@@ -67,8 +79,7 @@ async function sendMessage(text) {
 
         const data = await response.json();
         removeLoader(loader);
-
-        addMessage(data.reply || "No response", "ai");
+        addMessage(data.reply || "⚠️ No response.", "ai");
     } catch (err) {
         removeLoader(loader);
         addMessage("⚠️ Server connection failed.", "ai");
@@ -80,6 +91,8 @@ async function sendMessage(text) {
 
 // ================= FILE UPLOAD =================
 async function sendFileQuery(query) {
+    if (!pendingFile) return;
+
     const formData = new FormData();
     formData.append("file", pendingFile);
     formData.append("query", query);
@@ -100,7 +113,12 @@ async function sendFileQuery(query) {
         const data = await response.json();
         removeLoader(loader);
 
-        addMessage(data.reply || "No response", "ai");
+        if (data.status === "success") {
+            addMessage(data.reply || "✅ File processed successfully.", "ai");
+        } else {
+            addMessage(data.reply || "⚠️ File processing failed.", "ai");
+        }
+
         clearPendingFile();
     } catch (err) {
         removeLoader(loader);
@@ -111,6 +129,30 @@ async function sendFileQuery(query) {
     finishProcessing();
 }
 
+// ================= FILE SELECTION =================
+function handleFileSelection() {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    // Size check
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        addMessage(`⚠️ File exceeds ${MAX_FILE_SIZE_MB}MB limit.`, "ai");
+        fileInput.value = "";
+        return;
+    }
+
+    // Extension check
+    const extension = file.name.split(".").pop().toLowerCase();
+    if (!ALLOWED_EXTENSIONS.includes(extension)) {
+        addMessage(`⚠️ Unsupported file type: .${extension}`, "ai");
+        fileInput.value = "";
+        return;
+    }
+
+    pendingFile = file;
+    addMessage(`📎 Ready: ${file.name}. What would you like to know?`, "ai");
+}
+
 // ================= HELPERS =================
 function addMessage(text, type) {
     const msg = document.createElement("div");
@@ -118,11 +160,10 @@ function addMessage(text, type) {
 
     const bubble = document.createElement("div");
     bubble.classList.add("bubble");
-
     bubble.innerText = text;
+
     msg.appendChild(bubble);
     chatWindow.appendChild(msg);
-
     smoothScroll();
 }
 
@@ -142,16 +183,11 @@ function addLoader() {
 }
 
 function removeLoader(loader) {
-    if (loader && loader.parentNode) {
-        loader.parentNode.removeChild(loader);
-    }
+    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
 }
 
 function smoothScroll() {
-    chatWindow.scrollTo({
-        top: chatWindow.scrollHeight,
-        behavior: "smooth"
-    });
+    chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: "smooth" });
 }
 
 function setStatus(text) {
@@ -169,53 +205,9 @@ function clearPendingFile() {
     fileInput.value = "";
 }
 
-// ================= FILE SELECTION =================
-uploadBtn.addEventListener("click", () => {
-    fileInput.click();
-});
-
-fileInput.addEventListener("change", () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    // Size validation
-    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-        addMessage(`⚠️ File exceeds ${MAX_FILE_SIZE_MB}MB limit.`, "ai");
-        fileInput.value = "";
-        return;
-    }
-
-    // Allowed extensions
-    const allowedExtensions = ["pdf", "csv", "docx", "xlsx"];
-    const extension = file.name.split(".").pop().toLowerCase();
-
-    if (!allowedExtensions.includes(extension)) {
-        addMessage(`⚠️ Unsupported file type: .${extension}`, "ai");
-        fileInput.value = "";
-        return;
-    }
-
-    pendingFile = file;
-    addMessage(`📎 Ready: ${file.name}. What would you like to know?`, "ai");
-});
-
-// ================= CLEAR MEMORY =================
-if (clearBtn) {
-    clearBtn.addEventListener("click", async () => {
-        await fetch(`${BACKEND_URL}/clear`, {
-            method: "POST",
-            credentials: "include"
-        });
-
-        addMessage("🧠 Memory cleared.", "ai");
-    });
-}
-
 // ================= VOICE INPUT =================
 if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-    const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
-
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.interimResults = false;
@@ -244,8 +236,7 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
 
     recognition.onend = () => {
         micBtn.style.color = "";
-        if (statusText.innerText === "Listening...")
-            setStatus("Ready");
+        if (statusText.innerText === "Listening...") setStatus("Ready");
     };
 } else {
     micBtn.disabled = true;
