@@ -185,9 +185,12 @@ fileInput.addEventListener("change", () => {
         return;
     }
 
-    // Optional: Restrict to PDF
-    if (file.type !== "application/pdf") {
-        addMessage("⚠️ Only PDF files are supported.", "ai");
+    // Allowed extensions
+    const allowedExtensions = ["pdf", "csv", "docx", "xlsx"];
+    const extension = file.name.split(".").pop().toLowerCase();
+
+    if (!allowedExtensions.includes(extension)) {
+        addMessage(`⚠️ Unsupported file type: .${extension}`, "ai");
         fileInput.value = "";
         return;
     }
