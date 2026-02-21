@@ -135,11 +135,19 @@ body {
     border-radius: 15px;
     margin-bottom: 15px;
     animation: fadeIn 0.4s ease;
+    word-wrap: break-word;
 }
 
 .message.ai {
     background: var(--glass);
     backdrop-filter: blur(10px);
+    font-family: 'Inter', sans-serif;  /* Sans-serif font */
+    font-size: 1.05rem;                 /* Slightly upscaled */
+    line-height: 1.5;                   /* Proper spacing between lines */
+    letter-spacing: 0.5px;              /* Better readability */
+    display: flex;
+    flex-wrap: wrap;
+    white-space: pre-wrap;              /* Preserve spaces and line breaks */
 }
 
 .message.user {
