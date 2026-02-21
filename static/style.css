@@ -1,24 +1,14 @@
 :root {
-  /* Background gradient layers */
-  --bg1: #0f0c29; /* fallback dark purple */
-  --bg2: #302b63; /* fallback medium purple */
-  --bg3: #24243e; /* fallback dark blue */
-
-  /* Glass overlay for panels */
+  --bg1: #0f0c29;
+  --bg2: #302b63;
+  --bg3: #24243e;
   --glass: rgba(255, 255, 255, 0.05);
-  
-  /* Borders */
   --border: rgba(255, 255, 255, 0.1);
-  
-  /* Text colors */
   --text-color: #ffffff;
-
-  /* Chat bubble backgrounds */
   --user-msg-bg: linear-gradient(45deg, #353d3d, #9575ae);
   --ai-msg-bg: var(--glass);
 }
 
-/* Reset */
 * {
   margin: 0;
   padding: 0;
@@ -26,14 +16,15 @@
   font-family: 'Inter', sans-serif;
 }
 
-/* Body layer: animated background gradient */
 body {
-  height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  background: linear-gradient(-45deg, var(--bg1, #0f0c29), var(--bg2, #302b63), var(--bg3, #24243e));
+  background: linear-gradient(-45deg, var(--bg1), var(--bg2), var(--bg3));
   background-size: 400% 400%;
   animation: gradientMove 12s ease infinite;
-  color: var(--text-color, #fff);
+  color: var(--text-color);
 }
 
 @keyframes gradientMove {
@@ -42,193 +33,264 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-/* App container */
+/* Main App */
 .app {
   display: flex;
-  height: 100vh;
+  flex: 1;
+  min-height: 100vh;
+  overflow: hidden;
 }
 
-/* Sidebar layer (frosted glass) */
+/* Sidebar */
 .sidebar {
-  width: 260px;
-  background: var(--glass, rgba(255,255,255,0.05));
-  backdrop-filter: blur(20px);
-  border-right: 1px solid var(--border, rgba(255,255,255,0.1));
+  flex: 0 0 260px;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 25px 20px;
+  background: var(--glass);
+  backdrop-filter: blur(22px);
+  border-right: 1px solid var(--border);
+  transition: all 0.3s ease;
 }
 
-/* Logo layer (top of sidebar) */
 .logo {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 30px;
 }
 
-/* New chat button */
 .new-chat {
-  padding: 10px;
-  border-radius: 12px;
-  border: 1px solid var(--text-color, #fff);
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--text-color);
   background: transparent;
-  color: var(--text-color, #fff);
+  color: var(--text-color);
   cursor: pointer;
-  transition: 0.3s;
-}
-.new-chat:hover {
-  background: var(--glass, rgba(255,255,255,0.05));
+  transition: all 0.3s ease;
+  text-align: center;
 }
 
-/* Chat history panel (layer above sidebar) */
+.new-chat:hover {
+  background: var(--glass);
+}
+
 .history {
-  margin-top: 20px;
+  margin-top: 25px;
   flex: 1;
   overflow-y: auto;
-}
-.history-item {
-  padding: 10px;
-  border-radius: 10px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-.history-item:hover,
-.history-item.active {
-  background: var(--glass, rgba(255,255,255,0.05));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* Profile / avatar layer */
+.history-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.3s ease;
+  word-break: break-word;
+}
+
+.history-item:hover,
+.history-item.active {
+  background: var(--glass);
+}
+
 .profile {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
+
 .avatar {
-  width: 40px;
-  height: 40px;
-  background: var(--text-color, #fff);
+  width: 48px;
+  height: 48px;
+  background: var(--text-color);
   border-radius: 50%;
 }
 
-/* Chat Section Layer (main content) */
+/* Chat Section */
 .chat-section {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
-/* Chat header layer */
+/* Chat Header */
 .chat-header {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 20px;
-  border-bottom: 1px solid var(--border, rgba(255,255,255,0.1));
+  gap: 18px;
+  padding: 22px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
+
 .ai-avatar {
-  width: 45px;
-  height: 45px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background: var(--text-color, #fff);
+  background: var(--text-color);
 }
 
-/* Chat window layer (scrollable) */
+/* Chat Window */
 .chat-window {
-  flex: 1;
-  padding: 20px;
+  flex: 1 1 auto;
+  padding: 25px 20px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
-/* Messages layer */
 .message {
   max-width: 70%;
-  padding: 12px 16px;
-  border-radius: 15px;
-  margin-bottom: 15px;
-  animation: fadeIn 0.4s ease;
+  padding: 14px 18px;
+  border-radius: 18px;
+  margin-bottom: 18px;
+  animation: fadeIn 0.35s ease forwards;
+  word-break: break-word;
+  line-height: 1.5;
 }
+
 .message.ai {
-  background: var(--ai-msg-bg, rgba(255,255,255,0.05));
-  backdrop-filter: blur(10px);
+  background: var(--ai-msg-bg);
+  backdrop-filter: blur(12px);
+  align-self: flex-start;
 }
+
 .message.user {
-  background: var(--user-msg-bg, linear-gradient(45deg, #353d3d, #9575ae));
+  background: var(--user-msg-bg);
   align-self: flex-end;
 }
+
+/* Fade In Animation */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Input area layer */
+/* Input Area */
 .input-area {
   display: flex;
-  padding: 15px;
-  border-top: 1px solid var(--border, rgba(255,255,255,0.1));
-}
-textarea {
-  flex: 1;
-  resize: none;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border, rgba(255,255,255,0.1));
-  background: var(--glass, rgba(255,255,255,0.05));
-  color: var(--text-color, #fff);
-  outline: none;
+  padding: 18px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
 }
 
-/* Action buttons */
+textarea {
+  flex: 1 1 auto;
+  resize: none;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  color: var(--text-color);
+  font-size: 16px;
+  outline: none;
+  min-height: 50px;
+}
+
 .actions button {
-  margin-left: 10px;
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
   border: none;
   cursor: pointer;
-  background: var(--glass, rgba(255,255,255,0.05));
-  color: var(--text-color, #fff);
-  transition: 0.3s;
-}
-.actions button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--glass);
+  color: var(--text-color);
+  font-size: 16px;
+  transition: 0.3s ease;
 }
 
-/* Sakra button layer */
+.actions button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Sakra Button */
 .sakra-btn {
   background: transparent;
   border: 2px solid #00f7ff;
   color: #00f7ff;
-  padding: 12px 20px;
-  border-radius: 12px;
+  padding: 14px 24px;
+  border-radius: 14px;
   cursor: pointer;
   font-weight: bold;
-  font-size: 18px;
+  font-size: 20px;
   letter-spacing: 2px;
   transition: all 0.3s ease;
 }
-.sakra-btn span { font-size: 20px; }
+
+.sakra-btn span {
+  font-size: 22px;
+}
+
 .sakra-btn small {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 4px;
-  opacity: 0.7;
+  opacity: 0.8;
 }
+
 .sakra-btn:hover {
   background: #00f7ff;
   color: #000;
-  transform: scale(1.05);
+  transform: scale(1.07);
 }
 
-/* Scrollbar layer */
-.chat-window::-webkit-scrollbar { width: 8px; }
+/* Scrollbar */
+.chat-window::-webkit-scrollbar {
+  width: 10px;
+}
+
 .chat-window::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
 }
 
-/* Responsive layer */
+/* Responsive tweaks */
+@media screen and (max-width: 1024px) {
+  .sidebar {
+    flex: 0 0 220px;
+    padding: 20px 15px;
+  }
+  .chat-header, .chat-window, .input-area {
+    padding: 18px 15px;
+  }
+  .message {
+    max-width: 80%;
+  }
+}
+
 @media screen and (max-width: 768px) {
-  .sidebar { width: 200px; padding: 15px; }
-  .chat-header, .chat-window, .input-area { padding: 15px; }
+  .sidebar {
+    flex: 0 0 200px;
+    padding: 15px 12px;
+  }
+  .chat-header, .chat-window, .input-area {
+    padding: 15px 12px;
+  }
+  .message {
+    max-width: 85%;
+    font-size: 15px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .sidebar {
+    display: none;
+  }
+  .chat-section {
+    flex: 1 1 100%;
+  }
+  .message {
+    max-width: 95%;
+    font-size: 14px;
+  }
+  textarea {
+    font-size: 14px;
+    min-height: 45px;
+  }
 }
