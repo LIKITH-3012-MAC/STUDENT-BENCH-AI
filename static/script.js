@@ -151,7 +151,7 @@ fileInput.addEventListener("change", () => {
   if (file.size > MAX_FILE_SIZE_MB*1024*1024) { addMessage(`⚠️ File exceeds ${MAX_FILE_SIZE_MB}MB limit.`, "ai"); fileInput.value = ""; return; }
   const allowed = ["pdf","csv","docx","xlsx"];
   const ext = file.name.split(".").pop().toLowerCase();
-  if (!allowed.includes(ext)) { addMessage(`⚠️ Unsupported file type: .${ext}`, "ai"); fileInput.value = ""; return; }
+  if (!allowed.includes(ext)) { addMessage(`⚠️ Unsupported file type: .${ext} ,USE .PDF SUPPORTED`, "ai"); fileInput.value = ""; return; }
   pendingFile = file; addMessage(`📎 Ready: ${file.name}. What would you like to know?`, "ai");
 });
 
